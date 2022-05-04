@@ -1,47 +1,5 @@
 "use strict";
 
-var vertexShaderSource = `#version 300 es
-
-// an attribute is an input (in) to a vertex shader.
-// It will receive data from a buffer
-in vec2 a_position;
-in vec4 a_color;
-out vec4 v_color;
-
-// Used to pass in the resolution of the canvas
-uniform vec2 u_resolution;
-
-// all shaders have a main function
-void main() {
-  v_color = a_color;
-
-  // convert the position from pixels to 0.0 to 1.0
-  vec2 zeroToOne = a_position / u_resolution;
-
-  // convert from 0->1 to 0->2
-  vec2 zeroToTwo = zeroToOne * 2.0;
-
-  // convert from 0->2 to -1->+1 (clipspace)
-  vec2 clipSpace = zeroToTwo - 1.0;
-
-  gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
-}
-`;
-
-var fragmentShaderSource = `#version 300 es
-
-precision highp float;
-
-in vec4 v_color;
-
-// we need to declare an output for the fragment shader
-out vec4 outColor;
-
-void main() {
-  outColor = v_color;
-}
-`;
-
 function main() {
   // Get A WebGL context
   var canvas = document.querySelector("#app");
@@ -50,11 +8,11 @@ function main() {
     return;
   }
 
-  // Use our boilerplate utils to compile the shaders and link into a program
-  var program = webglUtils.createProgramFromSources(gl, [
-    vertexShaderSource,
-    fragmentShaderSource,
+  var program = webglUtils.createProgramFromScripts(gl, [
+    "vertex-shader",
+    "fragment-shader",
   ]);
+  console.log(program);
 
   var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
   var colorAttributeLocation = gl.getAttribLocation(program, "a_color");
