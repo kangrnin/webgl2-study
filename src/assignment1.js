@@ -5,12 +5,15 @@ var vertexShaderSource = `#version 300 es
 // an attribute is an input (in) to a vertex shader.
 // It will receive data from a buffer
 in vec2 a_position;
+in vec4 a_color;
+out vec4 v_color;
 
 // Used to pass in the resolution of the canvas
 uniform vec2 u_resolution;
 
 // all shaders have a main function
 void main() {
+  v_color = a_color;
 
   // convert the position from pixels to 0.0 to 1.0
   vec2 zeroToOne = a_position / u_resolution;
@@ -29,13 +32,13 @@ var fragmentShaderSource = `#version 300 es
 
 precision highp float;
 
-uniform vec4 u_color;
+in vec4 v_color;
 
 // we need to declare an output for the fragment shader
 out vec4 outColor;
 
 void main() {
-  outColor = u_color;
+  outColor = v_color;
 }
 `;
 
@@ -53,30 +56,26 @@ function main() {
     fragmentShaderSource,
   ]);
 
-  // look up where the vertex data needs to go.
   var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-
-  // look up uniform locations
+  var colorAttributeLocation = gl.getAttribLocation(program, "a_color");
   var resolutionUniformLocation = gl.getUniformLocation(
     program,
     "u_resolution"
   );
-  var colorLocation = gl.getUniformLocation(program, "u_color");
 
-  // Create a buffer
-  var positionBuffer = gl.createBuffer();
+  webglUtils.resizeCanvasToDisplaySize(gl.canvas);
 
-  // Create a vertex array object (attribute state)
-  var vao = gl.createVertexArray();
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+  gl.clearColor(0, 0, 0, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.useProgram(program);
+  gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
 
-  // and make it the one we're currently working with
-  gl.bindVertexArray(vao);
-
-  // Turn on the attribute
+  // buffer for vertex
   gl.enableVertexAttribArray(positionAttributeLocation);
-
-  // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
+  var positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  bufferTriangle(gl, gl.canvas.width / 2, gl.canvas.height / 2, 150);
 
   // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
   var size = 2; // 2 components per iteration
@@ -93,45 +92,32 @@ function main() {
     offset
   );
 
-  webglUtils.resizeCanvasToDisplaySize(gl.canvas);
+  // buffer for color
+  gl.enableVertexAttribArray(colorAttributeLocation);
+  var colorBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+  bufferColors(gl);
 
-  // Tell WebGL how to convert from clip space to pixels
-  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+  // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+  var size = 4; // 2 components per iteration
+  var type = gl.FLOAT; // the data is 32bit floats
+  var normalize = false; // don't normalize the data
+  var stride = 0; // 0 = move forward size * sizeof(type) each iteration to get the next position
+  var offset = 0; // start at the beginning of the buffer
+  gl.vertexAttribPointer(
+    colorAttributeLocation,
+    size,
+    type,
+    normalize,
+    stride,
+    offset
+  );
 
-  // Clear the canvas
-  gl.clearColor(0, 0, 0, 0);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-  // Tell it to use our program (pair of shaders)
-  gl.useProgram(program);
-
-  // Bind the attribute/buffer set we want.
-  gl.bindVertexArray(vao);
-
-  // Pass in the canvas resolution so we can convert from
-  // pixels to clipspace in the shader
-  gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
-
-  // draw 50 random rectangles in random colors
-  for (var ii = 0; ii < 50; ++ii) {
-    // Put a rectangle in the position buffer
-    setRectangle(
-      gl,
-      randomInt(300),
-      randomInt(300),
-      randomInt(300),
-      randomInt(300)
-    );
-
-    // Set a random color.
-    gl.uniform4f(colorLocation, Math.random(), Math.random(), Math.random(), 1);
-
-    // Draw the rectangle.
-    var primitiveType = gl.TRIANGLES;
-    var offset = 0;
-    var count = 6;
-    gl.drawArrays(primitiveType, offset, count);
-  }
+  // Draw the rectangle.
+  var primitiveType = gl.TRIANGLES;
+  var offset = 0;
+  var count = 3;
+  gl.drawArrays(primitiveType, offset, count);
 }
 
 // Returns a random integer from 0 to range - 1.
@@ -139,15 +125,39 @@ function randomInt(range) {
   return Math.floor(Math.random() * range);
 }
 
-// Fill the buffer with the values that define a rectangle.
-function setRectangle(gl, x, y, width, height) {
-  var x1 = x;
-  var x2 = x + width;
-  var y1 = y;
-  var y2 = y + height;
+function bufferTriangle(gl, x, y, r) {
   gl.bufferData(
     gl.ARRAY_BUFFER,
-    new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]),
+    new Float32Array([
+      x,
+      y - r,
+      x - r * 0.7,
+      y + r * 0.3,
+      x + r * 0.7,
+      y + r * 0.3,
+    ]),
+    gl.STATIC_DRAW
+  );
+}
+
+function bufferColors(gl) {
+  // Make every vertex a different color.
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([
+      Math.random(),
+      Math.random(),
+      Math.random(),
+      1,
+      Math.random(),
+      Math.random(),
+      Math.random(),
+      1,
+      Math.random(),
+      Math.random(),
+      Math.random(),
+      1,
+    ]),
     gl.STATIC_DRAW
   );
 }
