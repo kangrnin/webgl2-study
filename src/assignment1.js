@@ -6,6 +6,9 @@ class PolygonRenderer {
   }
 
   renderPolygon(positions, colors) {
+    positions = new Float32Array(positions)
+    colors = new Float32Array(colors)
+
     this.setVertexPositions(positions)
     this.setColors(colors)
 
@@ -54,19 +57,42 @@ class PolygonRenderer {
   }
 }
 
+function sinDeg(degree) {
+  return Math.sin(degree * (Math.PI / 180))
+}
+
+function cosDeg(degree) {
+  return Math.cos(degree * (Math.PI / 180))
+}
+
 function generateTrianglePositions(x, y, r) {
-  const cos30 = Math.cos(30 * (Math.PI / 180))
-  const sin30 = Math.sin(30 * (Math.PI / 180))
-  return new Float32Array([x, y - r, x - r * cos30, y + r * sin30, x + r * cos30, y + r * sin30])
+  return [x, y - r, x - r * cosDeg(30), y + r * sinDeg(30), x + r * cosDeg(30), y + r * sinDeg(30)]
 }
 
 function generateRandomColors(n) {
   let colors = []
   for (let i = 0; i < n; i++) {
-    colors = [...colors, Math.random(), Math.random(), Math.random(), 1]
+    colors.push([Math.random(), Math.random(), Math.random(), 1])
   }
+  return colors
+}
 
-  return new Float32Array(colors)
+function renderCircle(renderer, x, y, r, vertexCnt, vertexColorCnt = vertexCnt) {
+  const centerColor = generateRandomColors(1)[0]
+  const vertexColors = generateRandomColors(vertexColorCnt)
+
+  for (let i = 0; i < vertexCnt; i++) {
+    const deg1 = (360 / vertexCnt) * i
+    const deg2 = (360 / vertexCnt) * (i + 1)
+    renderer.renderPolygon(
+      [x, y, x + r * sinDeg(deg1), y - r * cosDeg(deg1), x + r * sinDeg(deg2), y - r * cosDeg(deg2)],
+      [
+        ...centerColor,
+        ...vertexColors[Math.floor(i * (vertexColorCnt / vertexCnt))],
+        ...vertexColors[Math.floor(((i + 1) % vertexCnt) * (vertexColorCnt / vertexCnt))],
+      ]
+    )
+  }
 }
 
 function main() {
@@ -90,27 +116,54 @@ function main() {
   gl.useProgram(program)
   gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height)
 
-  const cos30 = Math.cos(30 * (Math.PI / 180))
-  const sin30 = Math.sin(30 * (Math.PI / 180))
-  const r = 100
-
+  const x1 = 300
+  const y1 = 300
+  const r1 = 100
   const polygonRenderer = new PolygonRenderer(gl, positionAttributeLocation, colorAttributeLocation)
   polygonRenderer.renderPolygon(
-    generateTrianglePositions(gl.canvas.width / 2, gl.canvas.height / 2 - r, r),
-    generateRandomColors(3)
+    generateTrianglePositions(x1, y1 - r1, r1),
+    generateRandomColors(3).reduce((prev, cur) => [...prev, ...cur])
   )
   polygonRenderer.renderPolygon(
-    generateTrianglePositions(gl.canvas.width / 2 - r * cos30, gl.canvas.height / 2 + r * sin30, r),
-    generateRandomColors(3)
+    generateTrianglePositions(x1 - r1 * cosDeg(30), y1 + r1 * sinDeg(30), r1),
+    generateRandomColors(3).reduce((prev, cur) => [...prev, ...cur])
   )
   polygonRenderer.renderPolygon(
-    generateTrianglePositions(gl.canvas.width / 2 + r * cos30, gl.canvas.height / 2 + r * sin30, r),
-    generateRandomColors(3)
+    generateTrianglePositions(x1 + r1 * cosDeg(30), y1 + r1 * sinDeg(30), r1),
+    generateRandomColors(3).reduce((prev, cur) => [...prev, ...cur])
   )
   polygonRenderer.renderPolygon(
-    generateTrianglePositions(gl.canvas.width / 2, gl.canvas.height / 2, -r),
-    generateRandomColors(3)
+    generateTrianglePositions(x1, y1, -r1),
+    generateRandomColors(3).reduce((prev, cur) => [...prev, ...cur])
   )
+
+  const x2 = 700
+  const y2 = 300
+  const r2 = 100
+  // left to right, top to bottom 0 ~ 5
+  const colors = generateRandomColors(6)
+  polygonRenderer.renderPolygon(generateTrianglePositions(x2, y2 - r2, r2), [...colors[0], ...colors[1], ...colors[2]])
+  polygonRenderer.renderPolygon(generateTrianglePositions(x2 - r2 * cosDeg(30), y2 + r2 * sinDeg(30), r2), [
+    ...colors[1],
+    ...colors[3],
+    ...colors[4],
+  ])
+  polygonRenderer.renderPolygon(generateTrianglePositions(x2, y2, -r2), [...colors[4], ...colors[2], ...colors[1]])
+  polygonRenderer.renderPolygon(generateTrianglePositions(x2 + r2 * cosDeg(30), y2 + r2 * sinDeg(30), r2), [
+    ...colors[2],
+    ...colors[4],
+    ...colors[5],
+  ])
+
+  const x3 = 300
+  const y3 = 600
+  const r3 = 130
+  renderCircle(polygonRenderer, x3, y3, r3, 20)
+
+  const x4 = 700
+  const y4 = 600
+  const r4 = 130
+  renderCircle(polygonRenderer, x4, y4, r4, 100, 1)
 }
 
 main()
