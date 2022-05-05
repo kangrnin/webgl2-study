@@ -8,15 +8,9 @@ class Renderer {
       return;
     }
 
-    var program = webglUtils.createProgramFromScripts(gl, [
-      "vertex-shader",
-      "fragment-shader",
-    ]);
+    var program = webglUtils.createProgramFromScripts(gl, ["vertex-shader", "fragment-shader"]);
 
-    var resolutionUniformLocation = gl.getUniformLocation(
-      program,
-      "u_resolution"
-    );
+    var resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
     var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
     var colorAttributeLocation = gl.getAttribLocation(program, "a_color");
 
@@ -29,12 +23,7 @@ class Renderer {
     gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
 
     // buffer for vertex position
-    this.bufferTrianglePosition(
-      gl,
-      gl.canvas.width / 2,
-      gl.canvas.height / 2,
-      150
-    );
+    this.bufferTrianglePosition(gl, gl.canvas.width / 2, gl.canvas.height / 2, 150);
     this.setPositionAttributePointer(gl, positionAttributeLocation);
 
     // buffer for color
@@ -46,14 +35,7 @@ class Renderer {
     var normalize = false;
     var stride = 0;
     var offset = 0;
-    gl.vertexAttribPointer(
-      colorAttributeLocation,
-      size,
-      type,
-      normalize,
-      stride,
-      offset
-    );
+    gl.vertexAttribPointer(colorAttributeLocation, size, type, normalize, stride, offset);
 
     // Draw the rectangle.
     var primitiveType = gl.TRIANGLES;
@@ -75,14 +57,7 @@ class Renderer {
     const sin30 = Math.sin(30 * (Math.PI / 180));
     gl.bufferData(
       gl.ARRAY_BUFFER,
-      new Float32Array([
-        x,
-        y - r,
-        x - r * cos30,
-        y + r * sin30,
-        x + r * cos30,
-        y + r * sin30,
-      ]),
+      new Float32Array([x, y - r, x - r * cos30, y + r * sin30, x + r * cos30, y + r * sin30]),
       gl.STATIC_DRAW
     );
   }
@@ -94,14 +69,7 @@ class Renderer {
     var normalize = false;
     var stride = 0;
     var offset = 0;
-    gl.vertexAttribPointer(
-      positionAttributeLocation,
-      size,
-      type,
-      normalize,
-      stride,
-      offset
-    );
+    gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
   }
 
   bufferColors(gl) {
